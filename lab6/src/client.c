@@ -189,6 +189,7 @@ int main(int argc, char** argv)
         }
         strcpy(to[servers_num - 1].ip, strtok(serv, ":"));
         ConvertStringToUI64(strtok(NULL, "\n"), &to[servers_num - 1].port);
+        fprintf('%s', to[servers_num - 1].port);
     }
     fclose(file);
 

@@ -139,6 +139,7 @@ int main(int argc, char **argv){
     struct sockaddr_in client;
     socklen_t client_len = sizeof(client);
     int client_fd = accept(server_fd, (struct sockaddr *)&client, &client_len);
+    printf("%d", client.sin_port);
     if (client_fd < 0)
     {
       fprintf(stderr, "Could not establish new connection\n");
