@@ -7,16 +7,67 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define SERV_PORT 10050
-#define BUFSIZE 100
+#include <getopt.h>
+
+//#define SERV_PORT 10050
+//#define BUFSIZE 100
 #define SADDR struct sockaddr
 
-int main() {
+int main(int argc, char *argv[]) {
+  int serv_port = -1;
+  int buf_size = -1;
+  while (1){
+        int current_optind = optind ? optind : 1;
+
+        static struct option options[] = {{"buf_size", required_argument, 0, 0},
+                                         {"serv_port", required_argument, 0, 0},
+                                         {0, 0, 0, 0}};
+
+        int option_index = 0;
+        int c = getopt_long(argc, argv, "", options, &option_index);
+
+        if (c == -1)
+        break;
+
+        switch (c) {
+        case 0: {
+        switch (option_index) {
+        case 0:
+                buf_size = atoi(optarg);  
+                if (buf_size <= 0) {
+                    printf("buf_size is a positive number\n");
+                    return 1;
+                }
+            break;
+        case 1:
+                serv_port = atoi(optarg);  
+                if (serv_port <= 0) {
+                    printf("serv_port is a positive number\n");
+                    return 1;
+                }
+            break;
+        default:
+                printf("Index %d is out of options\n", option_index);
+        }
+        } break;
+
+        case '?':
+        printf("Arguments error\n");
+        break;
+        default:
+            fprintf(stderr, "getopt returned character code 0%o?\n", c);
+        }
+    } 
+
+  if (buf_size == -1 || serv_port==-1) {
+    fprintf(stderr, "Using: %s --buf_size 100 --serv_port 10050\n", argv[0]);
+    return 1;
+  }
   const size_t kSize = sizeof(struct sockaddr_in);
 
   int lfd, cfd;
   int nread;
-  char buf[BUFSIZE];
+  char buf[buf_size];
   struct sockaddr_in servaddr;
   struct sockaddr_in cliaddr;
 
@@ -28,7 +79,7 @@ int main() {
   memset(&servaddr, 0, kSize);
   servaddr.sin_family = AF_INET;
   servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-  servaddr.sin_port = htons(SERV_PORT);
+  servaddr.sin_port = htons(serv_port);
 
   if (bind(lfd, (SADDR *)&servaddr, kSize) < 0) {
     perror("bind");
@@ -41,22 +92,22 @@ int main() {
   }
 
   while (1) {
-    unsigned int clilen = kSize;
+        unsigned int clilen = kSize;
 
-    if ((cfd = accept(lfd, (SADDR *)&cliaddr, &clilen)) < 0) {
-      perror("accept");
-      exit(1);
-    }
-    printf("connection established\n");
+        if ((cfd = accept(lfd, (SADDR *)&cliaddr, &clilen)) < 0) {
+        perror("accept");
+        exit(1);
+        }
+        printf("connection established\n");
 
-    while ((nread = read(cfd, buf, BUFSIZE)) > 0) {
-      write(1, &buf, nread);
-    }
+        while ((nread = read(cfd, buf, buf_size)) > 0) {
+        write(1, &buf, nread);
+        }
 
-    if (nread == -1) {
-      perror("read");
-      exit(1);
+        if (nread == -1) {
+        perror("read");
+        exit(1);
+        }
+        close(cfd);
     }
-    close(cfd);
-  }
 }
